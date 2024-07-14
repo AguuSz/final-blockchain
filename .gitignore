@@ -1,0 +1,4 @@
+backend/__pycache__
+mnemonic.txt
+build/
+node_modules
