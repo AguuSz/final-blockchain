@@ -1,7 +1,9 @@
-//SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
 import "./CFP.sol";
+import "./ReverseRegistrar.sol";
+import "./PublicResolver.sol";
 
 contract CFPFactory {
     // Evento que se emite cuando se crea un llamado a presentación de propuestas
@@ -24,6 +26,9 @@ contract CFPFactory {
 
     address private factoryOwner;
 
+    ReverseRegistrar revRegistrar;
+    PublicResolver pubResolver;
+
     mapping(bytes32 => CallForProposals) private callsMapping;  // Mapeo que asocia un identificador de llamado con un llamado
     mapping(address => status) private statusMapping;           // Mapeo que asocia una dirección con su estado
     mapping(address => bytes32[]) private CFPMapping;           // Mapeo que asocia una dirección con la lista de sus CFPs
@@ -32,8 +37,10 @@ contract CFPFactory {
 
     CallForProposals[] private CFPList;
 
-    constructor () {
+    constructor (ReverseRegistrar revReg, PublicResolver pubRes) {
         factoryOwner = msg.sender;
+        revRegistrar = revReg;
+        pubResolver = pubRes;
     }
 
     modifier created(bytes32 callId) {
@@ -78,8 +85,8 @@ contract CFPFactory {
         return creatorsArray[index];
     }
 
-    function _createFor(bytes32 callId, uint timestamp, address creator) public returns (CFP) {
-        CFP cfp = new CFP(callId, timestamp);
+    function _createFor(bytes32 callId, uint timestamp, address creator) internal returns (CFP) {
+        CFP cfp = new CFP(callId, timestamp, revRegistrar, pubResolver);
 
         // Creo un nuevo CFP y lo agrego al mapeo de CFPs
         CallForProposals memory newCFP = CallForProposals({
@@ -123,6 +130,14 @@ contract CFPFactory {
         address creator
     ) public notCreated(callId) ownerOnly(msg.sender) authorized(creator) returns (CFP) {
         return _createFor(callId, timestamp, creator);
+    }
+
+    function setName(bytes32 callId, string memory name) public returns (bytes32) {
+      return callsMapping[callId].cfp.setName(name);
+    }
+
+    function getName(bytes32 callId, bytes32 node) public view returns (string memory) {
+      return callsMapping[callId].cfp.getName(node);
     }
 
     // Devuelve la cantidad de cuentas que han creado llamados.

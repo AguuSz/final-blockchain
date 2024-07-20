@@ -44,6 +44,8 @@ const CallsTable = ({ className }: { className?: string }) => {
 	const { userAccount } = useStore();
 	const isUserConnected = userAccount !== "";
 
+	const [isDialogOpen, setIsDialogOpen] = useState(false);
+
 	const fetchCalls = async (address = "") => {
 		setIsLoading(true);
 		try {
@@ -158,9 +160,11 @@ const CallsTable = ({ className }: { className?: string }) => {
 								</h1>
 								{isUserConnected && (
 									<div className="flex gap-2">
-										<Dialog>
+										<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
 											<DialogTrigger asChild>
-												<Button variant="outline">
+												<Button
+													variant="outline"
+													onClick={() => setIsDialogOpen(true)}>
 													<Plus size={20} />
 												</Button>
 											</DialogTrigger>
@@ -169,7 +173,7 @@ const CallsTable = ({ className }: { className?: string }) => {
 													<DialogTitle>
 														Creacion de un nuevo llamado
 													</DialogTitle>
-													<CallForm />
+													<CallForm onClose={() => setIsDialogOpen(false)} />
 												</DialogHeader>
 											</DialogContent>
 										</Dialog>
@@ -219,9 +223,11 @@ const CallsTable = ({ className }: { className?: string }) => {
 								</h1>
 								{isUserConnected && (
 									<div className="flex gap-2">
-										<Dialog>
+										<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
 											<DialogTrigger asChild>
-												<Button variant="outline">
+												<Button
+													variant="outline"
+													onClick={() => setIsDialogOpen(true)}>
 													<Plus size={20} />
 												</Button>
 											</DialogTrigger>
@@ -230,7 +236,7 @@ const CallsTable = ({ className }: { className?: string }) => {
 													<DialogTitle>
 														Creacion de un nuevo llamado
 													</DialogTitle>
-													<CallForm />
+													<CallForm onClose={() => setIsDialogOpen(false)} />
 												</DialogHeader>
 											</DialogContent>
 										</Dialog>

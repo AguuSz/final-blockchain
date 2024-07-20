@@ -13,6 +13,7 @@ import { toast } from "./ui/use-toast";
 import buildInfo from "../../../contract/build/contracts/CFPFactory.json";
 import Web3 from "web3";
 import { toChecksumAddress } from "@/utils";
+import { cfpFactoryContract, web3 } from "@/utils/web3Config";
 
 const MetamaskConnect = () => {
 	const {
@@ -28,10 +29,6 @@ const MetamaskConnect = () => {
 	const [isConnected, setIsConnected] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 
-	const getFactoryAddress = () => {
-		return buildInfo.networks[5777].address;
-	};
-
 	// Connect to the selected provider using eth_requestAccounts.
 	const handleConnect = async (providerWithInfo: EIP6963ProviderDetail) => {
 		providers.forEach(async (provider) => {
@@ -45,11 +42,8 @@ const MetamaskConnect = () => {
 					await setSelectedWallet(providerWithInfo);
 					await setUserAccount(toChecksumAddress(accounts?.[0]));
 
-					const web3Instance = new Web3(window.ethereum);
-					const contractInstance = new web3Instance.eth.Contract(
-						buildInfo.abi,
-						getFactoryAddress()
-					);
+					const web3Instance = web3;
+					const contractInstance = cfpFactoryContract;
 					setWeb3(web3Instance);
 					setContract(contractInstance);
 

@@ -47,7 +47,7 @@ const formSchema = z.object({
 
 type FormSchemaType = z.infer<typeof formSchema>;
 
-export function CallForm() {
+export function CallForm({ onClose }) {
 	const [isLoading, setIsLoading] = useState(false);
 	const { contract, web3, userAccount } = useStore();
 	const form = useForm<FormSchemaType>({
@@ -85,6 +85,7 @@ export function CallForm() {
 						title: "Llamado creado",
 						description: "El llamado ha sido creado exitosamente.",
 					});
+					onClose();
 				})
 				.on("error", () => {
 					toast({
