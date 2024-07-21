@@ -74,3 +74,19 @@ export const getRandomFutureDate = (daysInFuture: number) => {
 	);
 	return future.toISOString().split(".")[0] + "-03:00";
 };
+
+export const nameHash = (domain: string) => {
+	let node =
+		"0x0000000000000000000000000000000000000000000000000000000000000000";
+	domain.toString();
+	if (domain !== "") {
+		const labels = domain.split(".");
+
+		for (let i = labels.length - 1; i >= 0; i--) {
+			const labelSha3 = Web3.utils.sha3(labels[i]);
+			node = Web3.utils.sha3(node + labelSha3.slice(2), { encoding: "hex" });
+		}
+	}
+
+	return node;
+};

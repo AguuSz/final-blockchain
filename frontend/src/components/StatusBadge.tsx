@@ -68,16 +68,13 @@ const StatusBadge = () => {
 	const nameHash = (domain: string) => {
 		let node =
 			"0x0000000000000000000000000000000000000000000000000000000000000000";
-		domain.toString();
 		if (domain !== "") {
 			const labels = domain.split(".");
-
 			for (let i = labels.length - 1; i >= 0; i--) {
 				const labelSha3 = Web3.utils.sha3(labels[i]);
 				node = Web3.utils.sha3(node + labelSha3.slice(2), { encoding: "hex" });
 			}
 		}
-
 		return node;
 	};
 
@@ -87,6 +84,7 @@ const StatusBadge = () => {
 			const resolverAddress = await ensRegistryContract.methods
 				.resolver(node)
 				.call();
+
 			return resolverAddress !== "0x0000000000000000000000000000000000000000";
 		} catch (error) {
 			console.log("Error al verificar si el usuario está registrado: ", error);
@@ -99,7 +97,6 @@ const StatusBadge = () => {
 
 		const isRegistered = await isUserRegistered(name);
 
-		// Checks basicos
 		if (isRegistered) {
 			toast({
 				title: "Error",
@@ -116,38 +113,66 @@ const StatusBadge = () => {
 		}
 
 		const nameWithDomain = name + ".usuarios.cfp";
+		console.log("User account: ", userAccount);
+		console.log("Name with domain: ", nameWithDomain);
+		console.log("Name hash: ", nameHash(nameWithDomain));
 
 		try {
 			// Registra el nombre
-			await userFIFSRegistrarContract.methods
+			const registerReceipt = await userFIFSRegistrarContract.methods
 				.register(Web3.utils.keccak256(name), userAccount)
 				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 });
+			console.log("Register receipt: ", registerReceipt);
 
-			await publicResolverContract.methods
+			// Configura la dirección en el resolver
+			const setAddrReceipt = await publicResolverContract.methods
 				.setAddr(nameHash(nameWithDomain), userAccount)
 				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 });
+			console.log("Set Addr receipt: ", setAddrReceipt);
 
-			await ensRegistryContract.methods
+			// Configura el resolver para el nombre ENS
+			const setResolverReceipt = await ensRegistryContract.methods
 				.setResolver(
 					nameHash(nameWithDomain),
 					publicResolverContract.options.address
 				)
 				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 });
+			console.log("Set Resolver receipt: ", setResolverReceipt);
 
-			await reverseRegistrarContract.methods
+			// Configura el nombre inverso
+			const setNameReceipt = await reverseRegistrarContract.methods
 				.setName(name)
 				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 });
+			console.log("Set Name receipt: ", setNameReceipt);
 
-			// Muestra un mensaje de éxito y cierra el dialog
-			toast({
-				title: "Éxito",
-				description: `El nombre ${name}.usuarios.cfp ha sido registrado exitosamente.`,
-			});
+			// Verifica la dirección configurada en el resolver
+			const resolvedAddress = await publicResolverContract.methods
+				.addr(nameHash(nameWithDomain))
+				.call();
+			console.log("Resolved address: ", resolvedAddress);
+
+			if (resolvedAddress.toLowerCase() === userAccount.toLowerCase()) {
+				toast({
+					title: "Éxito",
+					description: `El nombre ${name}.usuarios.cfp ha sido registrado exitosamente.`,
+				});
+			} else {
+				toast({
+					title: "Error",
+					description: `La dirección resuelta ${resolvedAddress} no coincide con la dirección del usuario ${userAccount}.`,
+				});
+			}
 		} catch (error) {
+			console.log(error);
 			if (error.code === 4001 || error.code === 100) {
 				toast({
 					title: "Error",
 					description: "El usuario ha cancelado la petición de firma.",
+				});
+			} else {
+				toast({
+					title: "Error",
+					description: `Error desconocido: ${error.message}`,
 				});
 			}
 		}

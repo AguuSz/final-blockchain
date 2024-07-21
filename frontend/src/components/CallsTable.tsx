@@ -23,7 +23,7 @@ import { useToast } from "./ui/use-toast";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { Input } from "@/components/ui/input"; // Importa el componente Input de ShadCN UI
-import { toChecksumAddress } from "@/utils";
+import { nameHash, toChecksumAddress } from "@/utils";
 import {
 	Dialog,
 	DialogContent,
@@ -32,6 +32,7 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { CallForm } from "./CallForm";
+import { publicResolverContract } from "@/utils/web3Config";
 
 const CallsTable = ({ className }: { className?: string }) => {
 	const [calls, setCalls] = useState<Call[]>([]);
@@ -62,16 +63,28 @@ const CallsTable = ({ className }: { className?: string }) => {
 				return;
 			}
 
-			let updatedCalls = callsList?.data.callsList.map((call: Call) => ({
+			let updatedCalls = callsList?.data.callsList.map((call) => ({
 				...call,
 				selected: false,
 			}));
 
 			if (address) {
 				updatedCalls = updatedCalls.filter(
-					(call: Call) => call.owner.toLowerCase() === address.toLowerCase()
+					(call) => call.owner.toLowerCase() === address.toLowerCase()
 				);
 			}
+
+			// Resuelve los nombres de los dueños
+			updatedCalls = await Promise.all(
+				updatedCalls.map(async (call) => {
+					const resolvedName = await resolveOwnerName(call.owner);
+					console.log(resolvedName);
+					return {
+						...call,
+						owner: resolvedName,
+					};
+				})
+			);
 
 			setCalls(updatedCalls);
 			setIsLoading(false);
@@ -127,6 +140,71 @@ const CallsTable = ({ className }: { className?: string }) => {
 
 	const handleAddressFilter = () => {
 		fetchCalls(creatorAddress);
+	};
+
+	// const resolveCallName = async (callId: string) => {
+	// 	try {
+	// 		const reverseNode = nameHash(
+	// 			`${callId.toLowerCase().substring(2)}.addr.reverse`
+	// 		);
+	// 		const name = await publicResolverContract.methods
+	// 			.name(reverseNode)
+	// 			.call();
+	// 		setCalls((prevCalls) =>
+	// 			prevCalls.map((call) =>
+	// 				call.callId === callId ? { ...call, name: name || callId } : call
+	// 			)
+	// 		);
+	// 	} catch (error) {
+	// 		console.log("Error al resolver el nombre del llamado: ", error);
+	// 		setCalls((prevCalls) =>
+	// 			prevCalls.map((call) =>
+	// 				call.owner === callId ? { ...call, name: callId } : call
+	// 			)
+	// 		);
+	// 	}
+	// };
+
+	// const resolveCallDescription = async (callAddress: string) => {
+	// 	try {
+	// 		const reverseNode = nameHash(
+	// 			`${callAddress.toLowerCase().substring(2)}.addr.reverse`
+	// 		);
+	// 		const description = await publicResolverContract.methods
+	// 			.text(reverseNode, "description")
+	// 			.call({ from: callAddress });
+	// 		setCalls((prevCalls) =>
+	// 			prevCalls.map((call) =>
+	// 				call.owner === callAddress
+	// 					? { ...call, description: description || "N/A" }
+	// 					: call
+	// 			)
+	// 		);
+	// 	} catch (error) {
+	// 		console.log("Error al resolver la descripción del llamado: ", error);
+	// 		setCalls((prevCalls) =>
+	// 			prevCalls.map((call) =>
+	// 				call.owner === callAddress ? { ...call, description: "N/A" } : call
+	// 			)
+	// 		);
+	// 	}
+	// };
+
+	const resolveOwnerName = async (account) => {
+		try {
+			const reverseNode = nameHash(
+				`${account.substring(2).toLowerCase()}.addr.reverse`
+			);
+			const nombre = await publicResolverContract.methods
+				.name(reverseNode)
+				.call();
+
+			// A la hora de retornar, no se si tiene que retornar con name.usuarios.cfp o solo name
+			return nombre || account;
+		} catch (error) {
+			console.log("Error obteniendo el nombre: ", error);
+			return account;
+		}
 	};
 
 	return (

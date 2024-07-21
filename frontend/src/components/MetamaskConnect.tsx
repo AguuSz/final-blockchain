@@ -10,8 +10,6 @@ import {
 } from "@/components/ui/tooltip";
 import { Check, Loader2 } from "lucide-react";
 import { toast } from "./ui/use-toast";
-import buildInfo from "../../../contract/build/contracts/CFPFactory.json";
-import Web3 from "web3";
 import { toChecksumAddress } from "@/utils";
 import { cfpFactoryContract, web3 } from "@/utils/web3Config";
 
