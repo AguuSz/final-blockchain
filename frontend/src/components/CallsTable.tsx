@@ -78,7 +78,6 @@ const CallsTable = ({ className }: { className?: string }) => {
 			updatedCalls = await Promise.all(
 				updatedCalls.map(async (call) => {
 					const resolvedName = await resolveOwnerName(call.owner);
-					console.log(resolvedName);
 					return {
 						...call,
 						owner: resolvedName,
@@ -261,7 +260,7 @@ const CallsTable = ({ className }: { className?: string }) => {
 											onClick={() => fetchCalls(creatorAddress)}>
 											<RefreshCcw
 												size={20}
-												className="group-hover:animate-spin"
+												className="group-hover:animate-spin transform rotate-180"
 											/>
 										</Button>
 									</div>
@@ -324,7 +323,7 @@ const CallsTable = ({ className }: { className?: string }) => {
 											onClick={() => fetchCalls(creatorAddress)}>
 											<RefreshCcw
 												size={20}
-												className="group-hover:animate-spin"
+												className="group-hover:animate-spin transform rotate-180"
 											/>
 										</Button>
 									</div>

@@ -13,6 +13,57 @@ El proyecto debe incluir tres componentes principales:
 
 Puede usarse una estructura de directorios diferente si las herramientas utilizadas así lo requieren. En este caso se deberá indicar claramente en qué directorio se encuentra cada uno de los tres componentes.
 
+## Detalles de instalacion
+
+Requisitos:
+
+- Tener instalado `node` y `npm`.
+  - En mi caso utilice `pnpm` en lugar de `npm`. No deberia haber inconvenientes con usar uno o el otro, pero si llega a haber alguno, verificar utilizando `pnpm`.
+- En el navegador contar con la extension [Metamask](https://metamask.io/) instalada.
+- Tener Python3 instalado.
+
+  - Es recomendable contar con ambientes virtuales para no tener conflictos con las dependencias. Para esto se puede utilizar `virtualenv` o `conda`. Mas informacion aqui:
+    - [virtualenv](https://virtualenv.pypa.io/en/latest/)
+    - [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
+
+- Tener instalado `truffle` y `ganache-cli` de manera global.
+
+  - Para instalar `truffle`:
+    ```bash
+    npm install -g truffle
+    ```
+  - Para instalar `ganache-cli`:
+    ```bash
+    npm install -g ganache-cli
+    ```
+
+> En caso de querer utilizar una interfaz grafica, se puede instalar **ganache**. Cumple la misma funcion que `ganache-cli` pero con una interfaz grafica. Mas informacion [aqui](https://www.trufflesuite.com/ganache).
+
+### Pasos para correr el proyecto
+
+- Tener alguna red de blockchain corriendo en la que se puedan hacer deploy de los contratos.
+  - En este caso, yo trabaje con `ganache-cli`, por lo que con este comando voy a levantar una red local:
+  - `ganache-cli -m "FRASE SEMILLA AQUI" -p 7545 -i 5777 --db DIRECTORIO_PARA_DB`
+    - `-m` es la frase semilla de la red.
+    - `-p` es el puerto en el que va a correr la red.
+    - `-i` es el id de la red.
+    - `--db` es el directorio donde se va a guardar la base de datos de la red. Esto no es obligatorio, pero esta bueno para en caso de que se quiera volver a levantar la red, cuente con los mismos datos de antes.
+- Hacer deploy de los contratos ubicados en la carpeta `/contract/` en la red ganache.
+  - Para esto: `truffle migrate --network development`.
+    - En este caso, va a buscar el archivo `truffle-config.js` y va a buscar la configuracion de la red `development`. En caso de querer configurar en distintos puertos, modificar esa red o crear una nueva segun guste.
+  - Esto generara unos archivos `.json` los cuales se utilizara para la interaccion con los contratos.
+- Levantar el servidor de la API, el cual se encuentra en la carpeta `./backend`
+  - Se asume que se tiene levantada una red ganache, la cual opera en el puerto `7545`.
+  - Instalar dependencias con `pip install -r requirements.txt`.
+  - Crear un archivo `.txt` con el nombre que quiera y dentro poner la frase semilla de la red levantad.
+  - Una vez creado el archivo, levantamos el server con: `python apiserver.py --mnemonic "mnemonic_file_path.txt"`
+- Para levantar el cliente hace falta instalar las dependencias del proyecto: `npm install`.
+  - Luego se lo inicia con `npm run dev`.
+  - Esto levantara el proyecto, el cual por defecto correra en el puerto `5173`.
+  - Ir a `http://localhost:5173` para ver la pagina.
+
+---
+
 ## Descripción general
 
 Debe proveerse un sistema de gestión de llamados a presentación de propuestas, con los criterios utilizados en los prácticos 6, 7 y 8.

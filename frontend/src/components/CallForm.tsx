@@ -1,5 +1,10 @@
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Loader2, RefreshCcw } from "lucide-react";
+import {
+	Calendar as CalendarIcon,
+	Check,
+	Loader2,
+	RefreshCcw,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -21,10 +26,18 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "@/components/ui/use-toast";
-import { generateRandomHash } from "@/utils";
+import { generateRandomHash, nameHash } from "@/utils";
 import { Input } from "./ui/input";
 import { useState } from "react";
 import { useStore } from "@/store/store";
+import {
+	callFIFSRegistrarContract,
+	cfpFactoryContract,
+	ensRegistryContract,
+	publicResolverContract,
+	reverseRegistrarContract,
+} from "@/utils/web3Config";
+import Web3 from "web3";
 
 const validateDate = (date) => {
 	const currentDate = new Date();
@@ -38,6 +51,11 @@ const formSchema = z.object({
 			message: "Se requiere de un ID de llamada.",
 		})
 		.default(""),
+	name: z
+		.string({
+			message: "El nombre no puede estar vacío.",
+		})
+		.default(""),
 	dateTime: z
 		.date({ message: "Se requiere de una fecha de cierre." })
 		.refine(validateDate, {
@@ -46,14 +64,17 @@ const formSchema = z.object({
 });
 
 type FormSchemaType = z.infer<typeof formSchema>;
+const domain = ".llamados.cfp";
 
 export function CallForm({ onClose }) {
 	const [isLoading, setIsLoading] = useState(false);
-	const { contract, web3, userAccount } = useStore();
+	const { userAccount } = useStore();
 	const form = useForm<FormSchemaType>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			callId: "",
+			name: "",
+			description: "",
 			dateTime: undefined,
 		},
 	});
@@ -62,7 +83,21 @@ export function CallForm({ onClose }) {
 		setIsLoading(true);
 
 		try {
-			const callIdHex = web3.utils.keccak256(data.callId);
+			const callIdHex = Web3.utils.keccak256(data.callId);
+			const isRegistered = await isNameRegistered(data.name);
+
+			if (data.name.includes(" ")) {
+				toast({
+					title: "Error al crear el llamado",
+					description: "El nombre no puede contener espacios.",
+				});
+			}
+			if (isRegistered) {
+				toast({
+					title: "Verificación",
+					description: `El nombre ${name}${domain} ya está registrado.`,
+				});
+			}
 
 			const currentTime = Math.floor(Date.now() / 1000);
 			const minimumDateTime = currentTime + 2 * 60;
@@ -77,23 +112,78 @@ export function CallForm({ onClose }) {
 				return;
 			}
 
-			await contract.methods
+			await cfpFactoryContract.methods
 				.create(callIdHex, data.dateTime.getTime() / 1000)
 				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 })
 				.on("receipt", () => {
 					toast({
 						title: "Llamado creado",
-						description: "El llamado ha sido creado exitosamente.",
+						description: "El llamado ha sido creado.",
 					});
-					onClose();
 				})
 				.on("error", () => {
 					toast({
 						title: "Error al crear el llamado",
 						description: "Hubo un error al crear el llamado.",
 					});
+					onClose();
+					return;
 				});
+
+			// Una vez creado, registramos su nombre en el ENS
+			const cfp = await cfpFactoryContract.methods.calls(callIdHex).call();
+
+			if (!cfp) {
+				toast({
+					title: "Error",
+					description: "Hubo un error al registrar el llamado.",
+				});
+				setIsLoading(false);
+				onClose();
+				return;
+			}
+
+			await callFIFSRegistrarContract.methods
+				.register(Web3.utils.keccak256(data.name), userAccount)
+				.send({ from: userAccount });
+			await publicResolverContract.methods
+				.setAddr(nameHash(data.name + domain), cfp[1])
+				.send({ from: userAccount });
+			await ensRegistryContract.methods
+				.setResolver(
+					nameHash(data.name + domain),
+					publicResolverContract.options.address
+				)
+				.send({ from: userAccount });
+			await cfpFactoryContract.methods
+				.setCallName(callIdHex, data.name)
+				.send({ from: userAccount });
+
+			// Una vez registrado, verificamos si hay descripcion para guardar
+			if (data.description) {
+				try {
+					await reverseRegistrarContract.methods
+						.setText(
+							nameHash(cfp[1].substring(2)) + ".addr.reverse",
+							"description",
+							data.description
+						)
+						.send({ from: userAccount });
+				} catch (error) {
+					console.log("Error al guardar la descripcion: ", error);
+					toast({
+						title: "Error al guardar la descripcion",
+						description: "Hubo un error al guardar la descripcion.",
+					});
+				}
+			}
+
 			setIsLoading(false);
+			toast({
+				title: "Llamado creado",
+				description: "El llamado ha sido creado y configurado exitosamente.",
+			});
+			onClose();
 		} catch (error) {
 			console.log(error);
 			if (error.code === 4001) {
@@ -112,6 +202,37 @@ export function CallForm({ onClose }) {
 		}
 	}
 
+	const handleNameVerification = async (name) => {
+		const isRegistered = await isNameRegistered(name);
+
+		if (isRegistered) {
+			toast({
+				title: "Verificación",
+				description: `El nombre ${name}${domain} ya está registrado.`,
+			});
+		} else {
+			toast({
+				title: "Verificación",
+				description: `El nombre ${name}${domain} está disponible.`,
+			});
+		}
+	};
+
+	// Verifica si el nombre esta registrado fijandose si tiene owner o no
+	const isNameRegistered = async (name: string) => {
+		try {
+			const node = nameHash(name + domain);
+			const resolverAddress = await ensRegistryContract.methods
+				.owner(nameHash(node))
+				.call();
+
+			return resolverAddress !== "0x0000000000000000000000000000000000000000";
+		} catch (error) {
+			console.log("Error al verificar si el nombre está registrado: ", error);
+			return false;
+		}
+	};
+
 	return (
 		<Form {...form}>
 			<form
@@ -121,7 +242,7 @@ export function CallForm({ onClose }) {
 					control={form.control}
 					name="callId"
 					render={({ field }) => (
-						<FormItem className="flex flex-col mt-2">
+						<FormItem className="flex flex-col mt-4">
 							<FormLabel className="text-left">Call ID</FormLabel>
 							<FormControl>
 								<div className="flex">
@@ -130,7 +251,7 @@ export function CallForm({ onClose }) {
 										type="text"
 										disabled
 										placeholder="Genere un valor"
-										className=" rounded-md p-2"
+										className="rounded-md p-2"
 									/>
 									<Button
 										variant="outline"
@@ -139,11 +260,59 @@ export function CallForm({ onClose }) {
 										onClick={() => field.onChange(generateRandomHash(64))}>
 										<RefreshCcw
 											size={14}
-											className="mr-2 group-hover:animate-spin"
+											className="mr-2 group-hover:animate-spin transform rotate-180"
 										/>
 										Generar
 									</Button>
 								</div>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+				<FormField
+					control={form.control}
+					name="name"
+					render={({ field }) => (
+						<FormItem className="flex flex-col my-1">
+							<FormLabel className="text-left">Nombre</FormLabel>
+							<FormControl>
+								<div className="flex">
+									<Input
+										{...field}
+										type="text"
+										placeholder="Nombre de la propuesta..."
+										className="rounded-md p-2"
+										autoComplete="off"
+									/>
+									<Button
+										variant="outline"
+										className="ml-2 group"
+										type="button"
+										onClick={() => handleNameVerification(field.value)}>
+										<Check size={14} className="mr-2" />
+										Verificar
+									</Button>
+								</div>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+				<FormField
+					control={form.control}
+					name="description"
+					render={({ field }) => (
+						<FormItem className="flex flex-col my-1">
+							<FormLabel className="text-left">Descripcion</FormLabel>
+							<FormControl>
+								<Input
+									{...field}
+									type="text"
+									placeholder="Breve descripcion del llamado"
+									className="rounded-md p-2"
+									autoComplete="off"
+								/>
 							</FormControl>
 							<FormMessage />
 						</FormItem>
@@ -200,7 +369,7 @@ export function CallForm({ onClose }) {
 					{isLoading ? (
 						<Loader2 className="animate-spin" size={26} />
 					) : (
-						"Submit"
+						"Crear llamado"
 					)}
 				</Button>
 			</form>

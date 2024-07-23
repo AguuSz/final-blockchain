@@ -11,16 +11,9 @@ import {
 import { Check, Loader2 } from "lucide-react";
 import { toast } from "./ui/use-toast";
 import { toChecksumAddress } from "@/utils";
-import { cfpFactoryContract, web3 } from "@/utils/web3Config";
 
 const MetamaskConnect = () => {
-	const {
-		setSelectedWallet,
-		setUserAccount,
-		clearUserAccount,
-		setContract,
-		setWeb3,
-	} = useStore();
+	const { setSelectedWallet, setUserAccount, clearUserAccount } = useStore();
 
 	const providers = useSyncProviders();
 
@@ -39,11 +32,6 @@ const MetamaskConnect = () => {
 
 					await setSelectedWallet(providerWithInfo);
 					await setUserAccount(toChecksumAddress(accounts?.[0]));
-
-					const web3Instance = web3;
-					const contractInstance = cfpFactoryContract;
-					setWeb3(web3Instance);
-					setContract(contractInstance);
 
 					setIsConnected(true);
 					setIsLoading(false);

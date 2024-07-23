@@ -20,29 +20,9 @@ interface MetamaskSlice {
 	clearUserAccount: () => void;
 }
 
-// Define la interfaz para el slice de CFPAddress
-interface CFPAddressSlice {
-	cfpAddress: string;
-	setCfpAddress: (cfpAddress: string) => void;
-}
-
-// Define la interfaz para el slice de Contract
-interface ContractSlice {
-	contract: any;
-	setContract: (contract: any) => void;
-	clearContract: () => void;
-}
-
-// Define la interfaz para el slice de Web3
-interface Web3Slice {
-	web3: any;
-	setWeb3: (web3: any) => void;
-	clearWeb3: () => void;
-}
-
 // Crea el slice de Call
 const createCallSlice: StateCreator<
-	CallSlice & MetamaskSlice & CFPAddressSlice & ContractSlice & Web3Slice,
+	CallSlice & MetamaskSlice,
 	[],
 	[],
 	CallSlice
@@ -55,7 +35,7 @@ const createCallSlice: StateCreator<
 
 // Crea el slice de Metamask
 const createMetamaskSlice: StateCreator<
-	CallSlice & MetamaskSlice & CFPAddressSlice & ContractSlice & Web3Slice,
+	CallSlice & MetamaskSlice,
 	[],
 	[],
 	MetamaskSlice
@@ -71,48 +51,8 @@ const createMetamaskSlice: StateCreator<
 	clearUserAccount: () => set({ userAccount: "" }),
 });
 
-// Crea el slice de CFPAddress
-const createCFPAddressSlice: StateCreator<
-	CallSlice & MetamaskSlice & CFPAddressSlice & ContractSlice & Web3Slice,
-	[],
-	[],
-	CFPAddressSlice
-> = (set) => ({
-	cfpAddress: "",
-	setCfpAddress: (cfpAddress: string) => set({ cfpAddress }),
-});
-
-// Crea el slice de Contract
-const createContractSlice: StateCreator<
-	CallSlice & MetamaskSlice & CFPAddressSlice & ContractSlice & Web3Slice,
-	[],
-	[],
-	ContractSlice
-> = (set) => ({
-	contract: null,
-	setContract: (contract: any) => set({ contract }),
-	clearContract: () => set({ contract: null }),
-});
-
-// Crea el slice de Web3
-const createWeb3Slice: StateCreator<
-	CallSlice & MetamaskSlice & CFPAddressSlice & ContractSlice & Web3Slice,
-	[],
-	[],
-	Web3Slice
-> = (set) => ({
-	web3: null,
-	setWeb3: (web3: any) => set({ web3 }),
-	clearWeb3: () => set({ web3: null }),
-});
-
 // Crea el store combinado
-export const useStore = create<
-	CallSlice & MetamaskSlice & CFPAddressSlice & ContractSlice & Web3Slice
->()((...a) => ({
+export const useStore = create<CallSlice & MetamaskSlice>()((...a) => ({
 	...createCallSlice(...a),
 	...createMetamaskSlice(...a),
-	...createCFPAddressSlice(...a),
-	...createContractSlice(...a),
-	...createWeb3Slice(...a),
 }));

@@ -27,6 +27,7 @@ import {
 	userFIFSRegistrarContract,
 	reverseRegistrarContract,
 	publicResolverContract,
+	cfpFactoryContract,
 } from "@/utils/web3Config";
 import Web3 from "web3";
 
@@ -37,7 +38,7 @@ const formSchema = z.object({
 type FormSchemaType = z.infer<typeof formSchema>;
 
 const StatusBadge = () => {
-	const { userAccount, contract } = useStore();
+	const { userAccount, setUserAccount } = useStore();
 	const [isAuthorized, setIsAuthorized] = useState(false);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [isNameEmpty, setIsNameEmpty] = useState(true);
@@ -64,6 +65,28 @@ const StatusBadge = () => {
 			setIsAuthorized(false);
 		}
 	}, [userAccount]);
+
+	useEffect(() => {
+		if (window.ethereum) {
+			window.ethereum.on("accountsChanged", handleAccountsChanged);
+		}
+		return () => {
+			if (window.ethereum) {
+				window.ethereum.removeListener(
+					"accountsChanged",
+					handleAccountsChanged
+				);
+			}
+		};
+	}, []);
+
+	const handleAccountsChanged = (accounts) => {
+		if (accounts.length > 0) {
+			setUserAccount(accounts[0]);
+		} else {
+			setUserAccount("");
+		}
+	};
 
 	const nameHash = (domain: string) => {
 		let node =
@@ -199,9 +222,9 @@ const StatusBadge = () => {
 
 	const handleRegister = async () => {
 		try {
-			await contract.methods
+			await cfpFactoryContract.methods
 				.register(userAccount)
-				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 })
+				.send({ from: userAccount, gas: "10000000", gasPrice: 1000000000 })
 				.on("confirmation", async () => {
 					toast({
 						title: "Éxito en el registro!",

@@ -5,13 +5,7 @@ import CallFIFSRegistrar from "../../../contract/build/contracts/CallFIFSRegistr
 import UserFIFSRegistrar from "../../../contract/build/contracts/UserFIFSRegistrar.json";
 import ReverseRegistrar from "../../../contract/build/contracts/ReverseRegistrar.json";
 import CFPFactory from "../../../contract/build/contracts/CFPFactory.json";
-let web3;
-
-if (window.ethereum) {
-	web3 = new Web3(window.ethereum);
-} else {
-	web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
-}
+const web3 = new Web3(window.ethereum);
 
 const cfpFactoryContract = new web3.eth.Contract(
 	CFPFactory.abi,
