@@ -158,11 +158,12 @@ export function CallForm({ onClose }) {
 				.setName(callIdHex, data.name)
 				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
 
+			console.log("Registrando descripcion");
 			if (data.description) {
 				try {
 					await reverseRegistrarContract.methods
 						.setText(
-							nameHash(cfp[1].substring(2) + ".addr.reverse"),
+							nameHash(cfp[1].toLowerCase().substring(2) + ".addr.reverse"),
 							"description",
 							data.description
 						)

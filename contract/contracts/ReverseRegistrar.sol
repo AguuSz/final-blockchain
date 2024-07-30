@@ -80,6 +80,10 @@ contract ReverseRegistrar {
         defaultResolver.setText(nodee,key,value);
     }
 
+    function getOwner(bytes32 nodee) public view returns (address) {
+        return ens.owner(nodee);
+    }
+
 
       /**
      * @dev Sets the `name()` record for the reverse ENS record associated with
