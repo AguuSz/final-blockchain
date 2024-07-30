@@ -8,7 +8,6 @@ import "./PublicResolver.sol";
 contract CFPFactory {
     // Evento que se emite cuando se crea un llamado a presentación de propuestas
     event CFPCreated(address creator, bytes32 callId, CFP cfp);
-    event SuccessfulRegistration(address account);
 
     // Estructura que representa un llamado
     struct CallForProposals {
@@ -173,7 +172,6 @@ contract CFPFactory {
      *  Si ya se ha registrado, revierte con el mensaje "Ya se ha registrado"
      */
     function register() public notRegistered(msg.sender) {
-        emit SuccessfulRegistration(msg.sender);
         statusMapping[msg.sender] = status.PENDING;
         registerPendingArray.push(msg.sender);
     }
