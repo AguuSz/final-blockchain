@@ -14,6 +14,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cfpFactoryContract } from "@/utils/web3Config";
 
 const Dropzone = () => {
 	const [files, setFiles] = useState([]);
@@ -95,7 +96,7 @@ const Dropzone = () => {
 		}
 
 		try {
-			await contract.methods
+			await cfpFactoryContract.methods
 				.registerProposal(callId, hash)
 				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 })
 				.on("receipt", function () {
@@ -216,7 +217,7 @@ const Dropzone = () => {
 									</Tooltip>
 								</TooltipProvider>
 								<>
-									{userAccount && contract && (
+									{userAccount && (
 										<TooltipProvider delayDuration={100}>
 											<Tooltip>
 												<TooltipTrigger asChild>

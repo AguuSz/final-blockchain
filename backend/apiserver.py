@@ -16,7 +16,7 @@ from pytz import timezone
 
 app = Flask(__name__)
 CORS(app)
-w3 = Web3(HTTPProvider("http://127.0.0.1:7545"))
+w3 = Web3(HTTPProvider("HTTP://127.0.0.1:7545"))
 CPF_FACTORY_FILE = "../contract/build/contracts/CFPFactory.json"
 CFP_FILE = "../contract/build/contracts/CFP.json"
 

@@ -7,7 +7,7 @@ import { useStore } from "@/store/store";
 import { getFactoryOwner } from "@/services/apiService";
 import { useEffect, useState } from "react";
 import { toChecksumAddress } from "@/utils";
-import StatusBadge from "./StatusBadge";
+import UserRegister from "./UserRegister";
 
 const Navbar = () => {
 	const { userAccount } = useStore();
@@ -41,7 +41,7 @@ const Navbar = () => {
 			</div>
 			<div className="flex flex-row justify-between items-center gap-2">
 				<CopyButton />
-				<StatusBadge />
+				<UserRegister />
 				<MetamaskConnect />
 			</div>
 		</div>

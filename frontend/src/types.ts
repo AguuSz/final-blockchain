@@ -1,6 +1,7 @@
 // Tipo para las calls
 export type Call = {
 	callId: string;
+	name: string;
 	owner: string;
 	timestamp: string;
 	selected: boolean;

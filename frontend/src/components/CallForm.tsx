@@ -56,6 +56,7 @@ const formSchema = z.object({
 			message: "El nombre no puede estar vacío.",
 		})
 		.default(""),
+	description: z.string().default(""), // optional
 	dateTime: z
 		.date({ message: "Se requiere de una fecha de cierre." })
 		.refine(validateDate, {
@@ -81,23 +82,14 @@ export function CallForm({ onClose }) {
 
 	async function onSubmit(data: FormSchemaType) {
 		setIsLoading(true);
+		console.log("Intentando registrar el callId: ", data.callId);
+		console.log("Los datos son: ", data);
 
 		try {
 			const callIdHex = Web3.utils.keccak256(data.callId);
 			const isRegistered = await isNameRegistered(data.name);
-
-			if (data.name.includes(" ")) {
-				toast({
-					title: "Error al crear el llamado",
-					description: "El nombre no puede contener espacios.",
-				});
-			}
-			if (isRegistered) {
-				toast({
-					title: "Verificación",
-					description: `El nombre ${name}${domain} ya está registrado.`,
-				});
-			}
+			console.log("isRegistered: ", isRegistered);
+			console.log("callIdHex: ", callIdHex);
 
 			const currentTime = Math.floor(Date.now() / 1000);
 			const minimumDateTime = currentTime + 2 * 60;
@@ -114,7 +106,7 @@ export function CallForm({ onClose }) {
 
 			await cfpFactoryContract.methods
 				.create(callIdHex, data.dateTime.getTime() / 1000)
-				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 })
+				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 })
 				.on("receipt", () => {
 					toast({
 						title: "Llamado creado",
@@ -130,8 +122,8 @@ export function CallForm({ onClose }) {
 					return;
 				});
 
-			// Una vez creado, registramos su nombre en el ENS
 			const cfp = await cfpFactoryContract.methods.calls(callIdHex).call();
+			console.log(cfp);
 
 			if (!cfp) {
 				toast({
@@ -145,38 +137,44 @@ export function CallForm({ onClose }) {
 
 			await callFIFSRegistrarContract.methods
 				.register(Web3.utils.keccak256(data.name), userAccount)
-				.send({ from: userAccount });
-			await publicResolverContract.methods
-				.setAddr(nameHash(data.name + domain), cfp[1])
-				.send({ from: userAccount });
-			await ensRegistryContract.methods
-				.setResolver(
-					nameHash(data.name + domain),
-					publicResolverContract.options.address
-				)
-				.send({ from: userAccount });
-			await cfpFactoryContract.methods
-				.setCallName(callIdHex, data.name)
-				.send({ from: userAccount });
+				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
 
-			// Una vez registrado, verificamos si hay descripcion para guardar
+			const node = nameHash(data.name + domain);
+
+			await publicResolverContract.methods
+				.setAddr(nameHash(data.name + ".llamados.cfp"), cfp[1])
+				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
+
+			await ensRegistryContract.methods
+				.setResolver(node, publicResolverContract.options.address)
+				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
+
+			console.log(
+				"Le seteamos el callIdHex: " + callIdHex + " al el nombre: " + data.name
+			);
+			await cfpFactoryContract.methods
+				.setName(callIdHex, data.name)
+				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
+
 			if (data.description) {
+				console.log("Se le asigna la descripcion: ", data.description);
 				try {
 					await reverseRegistrarContract.methods
 						.setText(
-							nameHash(cfp[1].substring(2)) + ".addr.reverse",
+							nameHash(cfp[1].substring(2) + ".addr.reverse"),
 							"description",
 							data.description
 						)
-						.send({ from: userAccount });
+						.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
 				} catch (error) {
-					console.log("Error al guardar la descripcion: ", error);
 					toast({
 						title: "Error al guardar la descripcion",
 						description: "Hubo un error al guardar la descripcion.",
 					});
 				}
 			}
+
+			console.log("Se ha creado el llamado y configurado correctamente.");
 
 			setIsLoading(false);
 			toast({
@@ -185,18 +183,10 @@ export function CallForm({ onClose }) {
 			});
 			onClose();
 		} catch (error) {
-			console.log(error);
-			if (error.code === 4001) {
-				toast({
-					title: "Error al crear el llamado",
-					description: "Se ha cancelado la transacción.",
-				});
-			} else {
-				toast({
-					title: "Error al crear el llamado",
-					description: "Hubo un error al crear el llamado.",
-				});
-			}
+			toast({
+				title: "Error al crear el llamado",
+				description: "Hubo un error al crear el llamado.",
+			});
 			setIsLoading(false);
 			return;
 		}
@@ -221,15 +211,14 @@ export function CallForm({ onClose }) {
 	// Verifica si el nombre esta registrado fijandose si tiene owner o no
 	const isNameRegistered = async (name: string) => {
 		try {
-			const node = nameHash(name + domain);
-			const resolverAddress = await ensRegistryContract.methods
-				.owner(nameHash(node))
-				.call();
-
-			return resolverAddress !== "0x0000000000000000000000000000000000000000";
+			return (
+				(await ensRegistryContract.methods
+					.owner(nameHash(name + ".llamados.cfp"))
+					.call({ from: userAccount })) !==
+				"0x0000000000000000000000000000000000000000"
+			);
 		} catch (error) {
-			console.log("Error al verificar si el nombre está registrado: ", error);
-			return false;
+			console.error("Error verificarExistenciaNombre: ", error);
 		}
 	};
 

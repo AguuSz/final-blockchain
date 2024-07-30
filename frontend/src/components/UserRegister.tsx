@@ -30,6 +30,7 @@ import {
 	cfpFactoryContract,
 } from "@/utils/web3Config";
 import Web3 from "web3";
+import { nameHash } from "@/utils";
 
 const formSchema = z.object({
 	name: z.string().nonempty("El nombre no puede estar vacío."),
@@ -37,8 +38,8 @@ const formSchema = z.object({
 
 type FormSchemaType = z.infer<typeof formSchema>;
 
-const StatusBadge = () => {
-	const { userAccount, setUserAccount } = useStore();
+const UserRegister = () => {
+	const { userAccount, setUserAccount, clearSelectedCall } = useStore();
 	const [isAuthorized, setIsAuthorized] = useState(false);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [isNameEmpty, setIsNameEmpty] = useState(true);
@@ -77,28 +78,18 @@ const StatusBadge = () => {
 					handleAccountsChanged
 				);
 			}
+			// Reseteo el call
+			clearSelectedCall();
 		};
 	}, []);
 
 	const handleAccountsChanged = (accounts) => {
+		clearSelectedCall();
 		if (accounts.length > 0) {
 			setUserAccount(accounts[0]);
 		} else {
 			setUserAccount("");
 		}
-	};
-
-	const nameHash = (domain: string) => {
-		let node =
-			"0x0000000000000000000000000000000000000000000000000000000000000000";
-		if (domain !== "") {
-			const labels = domain.split(".");
-			for (let i = labels.length - 1; i >= 0; i--) {
-				const labelSha3 = Web3.utils.sha3(labels[i]);
-				node = Web3.utils.sha3(node + labelSha3.slice(2), { encoding: "hex" });
-			}
-		}
-		return node;
 	};
 
 	const isUserRegistered = async (name: string) => {
@@ -224,7 +215,7 @@ const StatusBadge = () => {
 		try {
 			await cfpFactoryContract.methods
 				.register(userAccount)
-				.send({ from: userAccount, gas: "10000000", gasPrice: 1000000000 })
+				.send({ from: userAccount, gas: 6721975, gasPrice: 1000000000 })
 				.on("confirmation", async () => {
 					toast({
 						title: "Éxito en el registro!",
@@ -330,4 +321,4 @@ const StatusBadge = () => {
 	);
 };
 
-export default StatusBadge;
+export default UserRegister;

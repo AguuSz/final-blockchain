@@ -16,6 +16,7 @@ import { Check, LoaderCircle, RefreshCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cfpFactoryContract } from "@/utils/web3Config";
 
 type User = {
 	address: string;
@@ -33,7 +34,7 @@ const AuthorizePage = () => {
 		useState<boolean>(false);
 	const [selectAll, setSelectAll] = useState(false);
 
-	const { userAccount, contract } = useStore();
+	const { userAccount } = useStore();
 
 	useEffect(() => {
 		const isOwner = async () => {
@@ -85,6 +86,7 @@ const AuthorizePage = () => {
 				.filter((user) => user.selected)
 				.map((user) => user.address);
 			setUsersToAuthorize(selectedUsers);
+			console.log(selectedUsers);
 
 			return updatedUsers;
 		});
@@ -121,9 +123,9 @@ const AuthorizePage = () => {
 		setAreUsersBeingAuthorized(true);
 		await usersToAuthorize.forEach(async (address: string) => {
 			try {
-				await contract.methods
+				await cfpFactoryContract.methods
 					.authorize(address)
-					.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 })
+					.send({ from: userAccount, gas: 6721975, gasPrice: 1000000000 })
 					.on("confirmation", (confirmationNumber, receipt) => {
 						toast({
 							title: "Usuario autorizado",
@@ -142,9 +144,7 @@ const AuthorizePage = () => {
 					.on("error", (error, receipt) => {
 						toast({
 							title: "Error al autorizar",
-							description: `Hubo un error al autorizar al usuario ${toChecksumAddress(
-								address
-							)}.`,
+							description: `Hubo un error al autorizar al usuario ${address}`,
 						});
 					});
 			} catch (error) {
