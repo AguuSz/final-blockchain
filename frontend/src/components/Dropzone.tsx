@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 import sha256 from "crypto-js/sha256";
 import { useStore } from "@/store/store";
 import { registerProposal, verifyProposal } from "@/services/apiService";
-import { useToast } from "./ui/use-toast";
+import { toast } from "sonner";
+
 import { File } from "@/types";
 import {
 	Tooltip,
@@ -19,8 +20,7 @@ import { cfpFactoryContract } from "@/utils/web3Config";
 const Dropzone = () => {
 	const [files, setFiles] = useState([]);
 	const [hash, setHash] = useState("");
-	const { call, contract, userAccount } = useStore();
-	const { toast } = useToast();
+	const { call, userAccount } = useStore();
 
 	// @ts-expect-error: It's because the acceptedFiles in Dropzone react doesnt have a particular type
 	// and when used with File[] it throws an error
@@ -51,23 +51,23 @@ const Dropzone = () => {
 		const timestamp = Number(call.timestamp);
 
 		if (timestamp < currentTimeInSeconds) {
-			toast({
-				title: "Error al registrar la propuesta",
+			toast("Error", {
 				description: "La convocatoria se encuentra cerrada.",
+				id: "call-closed",
 			});
 			return;
 		}
 		const response = await registerProposal(callId, hash);
 
 		if (response?.statusCode === 201) {
-			toast({
-				title: "Propuesta registrada",
+			toast("Propuesta registrada", {
 				description: "La propuesta ha sido registrada exitosamente.",
+				id: "proposal-registered",
 			});
 		} else {
-			toast({
-				title: "Error al registrar la propuesta",
+			toast("Error", {
 				description: response?.message,
+				id: "proposal-error",
 			});
 		}
 	};
@@ -77,9 +77,9 @@ const Dropzone = () => {
 		const isAlreadyRegistered = await verifyProposal(callId, hash);
 
 		if (isAlreadyRegistered?.statusCode === 200) {
-			toast({
-				title: "Error",
-				description: "La propuesta ya se encuentra registrada.",
+			toast("Error", {
+				description: "La propuesta ya se encuentra registrada en este llamado.",
+				id: "proposal-already-registered",
 			});
 			return;
 		}
@@ -88,9 +88,9 @@ const Dropzone = () => {
 		const timestamp = Number(call.timestamp);
 
 		if (timestamp < currentTimeInSeconds) {
-			toast({
-				title: "Error al registrar la propuesta",
+			toast("Error", {
 				description: "La convocatoria se encuentra cerrada.",
+				id: "call-closed",
 			});
 			return;
 		}
@@ -98,23 +98,23 @@ const Dropzone = () => {
 		try {
 			await cfpFactoryContract.methods
 				.registerProposal(callId, hash)
-				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 })
+				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 })
 				.on("receipt", function () {
-					toast({
-						title: "Propuesta registrada",
+					toast("Propuesta registrada", {
 						description: "La propuesta ha sido registrada exitosamente.",
+						id: "proposal-registered",
 					});
 				});
 		} catch (error) {
 			if (error.code === 4001) {
-				toast({
-					title: "Error al registrar la propuesta",
-					description: "El usuario cancelo la transaccion.",
+				toast("Denegado", {
+					description: "La transacción ha sido rechazada por el usuario.",
+					id: "transaction-denied",
 				});
 			} else {
-				toast({
-					title: "Error al registrar la propuesta",
+				toast("Error", {
 					description: "Hubo un error al registrar la propuesta.",
+					id: "proposal-error",
 				});
 			}
 		}
@@ -124,19 +124,19 @@ const Dropzone = () => {
 		const callId = "0x" + call.callId;
 		const response = await verifyProposal(callId, hash);
 		if (response?.statusCode === 200) {
-			toast({
-				title: "Tiene propuesta registrada",
-				description: "El llamado ya cuenta con esta propuesta registrada.",
+			toast("Propuesta registrada", {
+				description: "La propuesta ha sido registrada en este llamado.",
+				id: "proposal-registered",
 			});
 		} else if (response?.statusCode === 404) {
-			toast({
-				title: "Sin propuesta registrada",
-				description: "El llamado NO cuenta con esta propuesta registrada.",
+			toast("Propuesta no registrada", {
+				description: "La propuesta NO ha sido registrada para este llamado.",
+				id: "proposal-not-registered",
 			});
 		} else {
-			toast({
-				title: "Error al verificar la propuesta",
+			toast("Error", {
 				description: response?.message,
+				id: "proposal-error",
 			});
 		}
 	};

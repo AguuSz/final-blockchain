@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { useStore } from "@/store/store";
 import { useEffect, useState } from "react";
 import { isUserAuthorized } from "@/services/apiService";
-import { toast } from "./ui/use-toast";
+import { toast } from "sonner";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -112,16 +112,16 @@ const UserRegister = () => {
 		const isRegistered = await isUserRegistered(name);
 
 		if (isRegistered) {
-			toast({
-				title: "Error",
+			toast("Error", {
 				description: "El nombre ya está registrado.",
+				id: "name-already-registered-error",
 			});
 			return;
 		}
 		if (name.includes(" ")) {
-			toast({
-				title: "Error",
+			toast("Error", {
 				description: "El nombre no puede contener espacios.",
+				id: "name-with-spaces-error",
 			});
 			return;
 		}
@@ -135,13 +135,13 @@ const UserRegister = () => {
 			// Registra el nombre
 			const registerReceipt = await userFIFSRegistrarContract.methods
 				.register(Web3.utils.keccak256(name), userAccount)
-				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 });
+				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
 			console.log("Register receipt: ", registerReceipt);
 
 			// Configura la dirección en el resolver
 			const setAddrReceipt = await publicResolverContract.methods
 				.setAddr(nameHash(nameWithDomain), userAccount)
-				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 });
+				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
 			console.log("Set Addr receipt: ", setAddrReceipt);
 
 			// Configura el resolver para el nombre ENS
@@ -150,13 +150,13 @@ const UserRegister = () => {
 					nameHash(nameWithDomain),
 					publicResolverContract.options.address
 				)
-				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 });
+				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
 			console.log("Set Resolver receipt: ", setResolverReceipt);
 
 			// Configura el nombre inverso
 			const setNameReceipt = await reverseRegistrarContract.methods
 				.setName(name)
-				.send({ from: userAccount, gas: "1000000", gasPrice: 1000000000 });
+				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
 			console.log("Set Name receipt: ", setNameReceipt);
 
 			// Verifica la dirección configurada en el resolver
@@ -166,27 +166,27 @@ const UserRegister = () => {
 			console.log("Resolved address: ", resolvedAddress);
 
 			if (resolvedAddress.toLowerCase() === userAccount.toLowerCase()) {
-				toast({
-					title: "Éxito",
+				toast.success("Éxito", {
 					description: `El nombre ${name}.usuarios.cfp ha sido registrado exitosamente.`,
+					id: "name-registered-success",
 				});
 			} else {
-				toast({
-					title: "Error",
+				toast("Error", {
 					description: `La dirección resuelta ${resolvedAddress} no coincide con la dirección del usuario ${userAccount}.`,
+					id: "name-registered-error",
 				});
 			}
 		} catch (error) {
 			console.log(error);
 			if (error.code === 4001 || error.code === 100) {
-				toast({
-					title: "Error",
+				toast("Error", {
 					description: "El usuario ha cancelado la petición de firma.",
+					id: "transaction-denied",
 				});
 			} else {
-				toast({
-					title: "Error",
+				toast("Error", {
 					description: `Error desconocido: ${error.message}`,
+					id: "unknown-error",
 				});
 			}
 		}
@@ -199,14 +199,14 @@ const UserRegister = () => {
 		const { name } = getValues();
 		const isRegistered = await isUserRegistered(name);
 		if (isRegistered) {
-			toast({
-				title: "Verificación",
+			toast("Verificación", {
 				description: `El nombre ${name}.usuarios.cfp ya está registrado.`,
+				id: "name-verification",
 			});
 		} else {
-			toast({
-				title: "Verificación",
+			toast("Verificación", {
 				description: `El nombre ${name}.usuarios.cfp está disponible.`,
+				id: "name-verification",
 			});
 		}
 	};
@@ -217,27 +217,27 @@ const UserRegister = () => {
 				.register(userAccount)
 				.send({ from: userAccount, gas: 6721975, gasPrice: 1000000000 })
 				.on("confirmation", async () => {
-					toast({
-						title: "Éxito en el registro!",
+					toast("Éxito en el registro!", {
 						description: "Ahora solo espera hasta que te autoricen.",
+						id: "register-success",
 					});
 				})
 				.on("error", (error) => {
-					toast({
-						title: "Error",
+					toast("Error", {
 						description: `Error al registrar al usuario: ${error.message}`,
+						id: "register-error",
 					});
 				});
 		} catch (error) {
 			if (error.code === 4001) {
-				toast({
-					title: "Error",
-					description: "El usuario ha cancelado la petición de firma.",
+				toast("Denegado", {
+					description: `El usuario ha cancelado la petición de firma.`,
+					id: "transaction-denied",
 				});
 			} else {
-				toast({
-					title: "Error",
-					description: "Se ha producido un error.",
+				toast("Error", {
+					description: `Se ha producido un error.`,
+					id: "register-error",
 				});
 			}
 		}

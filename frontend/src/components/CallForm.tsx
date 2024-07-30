@@ -25,7 +25,7 @@ import {
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { generateRandomHash, nameHash } from "@/utils";
 import { Input } from "./ui/input";
 import { useState } from "react";
@@ -82,23 +82,28 @@ export function CallForm({ onClose }) {
 
 	async function onSubmit(data: FormSchemaType) {
 		setIsLoading(true);
-		console.log("Intentando registrar el callId: ", data.callId);
-		console.log("Los datos son: ", data);
 
 		try {
 			const callIdHex = Web3.utils.keccak256(data.callId);
 			const isRegistered = await isNameRegistered(data.name);
-			console.log("isRegistered: ", isRegistered);
-			console.log("callIdHex: ", callIdHex);
+
+			if (isRegistered) {
+				toast("Verificacion", {
+					description: `El nombre ${data.name}${domain} ya se esta en uso.`,
+					id: "name-verification",
+				});
+				setIsLoading(false);
+				return;
+			}
 
 			const currentTime = Math.floor(Date.now() / 1000);
 			const minimumDateTime = currentTime + 2 * 60;
 
 			if (data.dateTime.getTime() / 1000 < minimumDateTime) {
-				toast({
-					title: "Error al crear el llamado",
+				toast("Validacion de datos", {
 					description:
 						"La fecha de cierre debe ser al menos 2 minutos después del tiempo actual.",
+					id: "date-validation",
 				});
 				setIsLoading(false);
 				return;
@@ -108,15 +113,15 @@ export function CallForm({ onClose }) {
 				.create(callIdHex, data.dateTime.getTime() / 1000)
 				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 })
 				.on("receipt", () => {
-					toast({
-						title: "Llamado creado",
+					toast("Llamado creado", {
 						description: "El llamado ha sido creado.",
+						id: "call-created",
 					});
 				})
 				.on("error", () => {
-					toast({
-						title: "Error al crear el llamado",
+					toast("Error", {
 						description: "Hubo un error al crear el llamado.",
+						id: "call-error",
 					});
 					onClose();
 					return;
@@ -126,9 +131,9 @@ export function CallForm({ onClose }) {
 			console.log(cfp);
 
 			if (!cfp) {
-				toast({
-					title: "Error",
+				toast("Error", {
 					description: "Hubo un error al registrar el llamado.",
+					id: "call-registration-error",
 				});
 				setIsLoading(false);
 				onClose();
@@ -149,15 +154,11 @@ export function CallForm({ onClose }) {
 				.setResolver(node, publicResolverContract.options.address)
 				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
 
-			console.log(
-				"Le seteamos el callIdHex: " + callIdHex + " al el nombre: " + data.name
-			);
 			await cfpFactoryContract.methods
 				.setName(callIdHex, data.name)
 				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
 
 			if (data.description) {
-				console.log("Se le asigna la descripcion: ", data.description);
 				try {
 					await reverseRegistrarContract.methods
 						.setText(
@@ -167,25 +168,23 @@ export function CallForm({ onClose }) {
 						)
 						.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 });
 				} catch (error) {
-					toast({
-						title: "Error al guardar la descripcion",
+					toast("Error con la descripcion", {
 						description: "Hubo un error al guardar la descripcion.",
+						id: "description-error",
 					});
 				}
 			}
 
-			console.log("Se ha creado el llamado y configurado correctamente.");
-
 			setIsLoading(false);
-			toast({
-				title: "Llamado creado",
+			toast("Llamado creado", {
 				description: "El llamado ha sido creado y configurado exitosamente.",
+				id: "call-created-success",
 			});
 			onClose();
 		} catch (error) {
-			toast({
-				title: "Error al crear el llamado",
+			toast("Error", {
 				description: "Hubo un error al crear el llamado.",
+				id: "call-creation-error",
 			});
 			setIsLoading(false);
 			return;
@@ -196,14 +195,14 @@ export function CallForm({ onClose }) {
 		const isRegistered = await isNameRegistered(name);
 
 		if (isRegistered) {
-			toast({
-				title: "Verificación",
-				description: `El nombre ${name}${domain} ya está registrado.`,
+			toast("Verificacion", {
+				description: `El nombre ${name}${domain} NO se encuentra disponible.`,
+				id: "name-verification",
 			});
 		} else {
-			toast({
-				title: "Verificación",
-				description: `El nombre ${name}${domain} está disponible.`,
+			toast("Verificacion", {
+				description: `El nombre ${name}${domain} se encuentra disponible.`,
+				id: "name-verification",
 			});
 		}
 	};

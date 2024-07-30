@@ -11,25 +11,29 @@ const CopyButton = () => {
 	const [accountName, setAccountName] = useState("");
 
 	useEffect(() => {
-		resolveAddress();
-	});
+		resolveAddress(userAccount);
+	}),
+		[userAccount];
 
-	const resolveAddress = async () => {
-		if (userAccount === "") return;
+	const resolveAddress = async (account) => {
+		if (account === "") {
+			setAccountName("");
+			return;
+		}
 
 		try {
 			const reverseNode = nameHash(
-				`${userAccount.substring(2).toLowerCase()}.addr.reverse`
+				`${account.substring(2).toLowerCase()}.addr.reverse`
 			);
 			const name = await publicResolverContract.methods
 				.name(reverseNode)
 				.call();
 
 			// A la hora de retornar, no se si tiene que retornar con name.usuarios.cfp o solo name
-			setAccountName(name || formatAddress(toChecksumAddress(userAccount)));
+			setAccountName(name || formatAddress(toChecksumAddress(account)));
 		} catch (error) {
 			console.log("Error obteniendo el nombre: ", error);
-			setAccountName(formatAddress(toChecksumAddress(userAccount)));
+			setAccountName(formatAddress(toChecksumAddress(account)));
 		}
 	};
 

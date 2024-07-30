@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getCalls } from "../services/apiService";
-import { useToast } from "./ui/use-toast";
+import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { Input } from "@/components/ui/input";
 import { nameHash } from "@/utils";
@@ -39,7 +39,6 @@ const CallsTable = ({ className }: { className?: string }) => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [creatorAddress, setCreatorAddress] = useState("");
 	const { setSelectedCall, clearSelectedCall } = useStore();
-	const { toast } = useToast();
 
 	const { userAccount } = useStore();
 	const isUserConnected = userAccount !== "";
@@ -53,10 +52,9 @@ const CallsTable = ({ className }: { className?: string }) => {
 
 			if (!callsList) {
 				setCalls([]);
-				toast({
-					title: "Error",
+				toast("Error", {
 					description: "Hubo un error al cargar las llamadas",
-					variant: "destructive",
+					id: "error-loading-calls",
 				});
 				return;
 			}
@@ -87,10 +85,9 @@ const CallsTable = ({ className }: { className?: string }) => {
 			setCalls(updatedCalls);
 		} catch (error) {
 			setCalls([]);
-			toast({
-				title: "Error",
+			toast("Error", {
 				description: "Hubo un error al cargar las llamadas",
-				variant: "destructive",
+				id: "error-loading-calls",
 			});
 		} finally {
 			setIsLoading(false);

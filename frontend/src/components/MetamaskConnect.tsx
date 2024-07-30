@@ -9,7 +9,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Check, Loader2 } from "lucide-react";
-import { toast } from "./ui/use-toast";
+import { toast } from "sonner";
 import { toChecksumAddress } from "@/utils";
 
 const MetamaskConnect = () => {
@@ -38,10 +38,9 @@ const MetamaskConnect = () => {
 				} catch (error) {
 					// El usuario cancelo la peticion de conexion
 					setIsLoading(false);
-					toast({
-						title: "Error",
+					toast.error("Error", {
 						description: "No se ha podido conectar con Metamask",
-						variant: "destructive",
+						id: "metamask-connect-error",
 					});
 				}
 			}

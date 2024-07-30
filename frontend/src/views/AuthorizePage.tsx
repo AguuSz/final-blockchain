@@ -14,7 +14,7 @@ import { useStore } from "@/store/store";
 import { toChecksumAddress } from "@/utils";
 import { Check, LoaderCircle, RefreshCcw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cfpFactoryContract } from "@/utils/web3Config";
 
@@ -68,8 +68,7 @@ const AuthorizePage = () => {
 			}));
 			setPendingUsers(users);
 		} else {
-			toast({
-				title: "Error",
+			toast("Error", {
 				description: "Hubo un error al cargar los usuarios pendientes",
 			});
 		}
@@ -113,9 +112,8 @@ const AuthorizePage = () => {
 
 	const handleAuthorize = async () => {
 		if (usersToAuthorize.length === 0) {
-			toast({
-				title: "Error",
-				description: "No se seleccionaron usuarios para autorizar",
+			toast("Error", {
+				description: "No hay usuarios seleccionados para autorizar",
 			});
 			return;
 		}
@@ -126,12 +124,9 @@ const AuthorizePage = () => {
 				await cfpFactoryContract.methods
 					.authorize(address)
 					.send({ from: userAccount, gas: 6721975, gasPrice: 1000000000 })
-					.on("confirmation", (confirmationNumber, receipt) => {
-						toast({
-							title: "Usuario autorizado",
-							description: `El usuario ${toChecksumAddress(
-								address
-							)} ha sido autorizado exitosamente.`,
+					.on("confirmation", () => {
+						toast("Usuario autorizado", {
+							description: `El usuario ${address} ha sido autorizado`,
 						});
 
 						setPendingUsers((prevUsers) => {
@@ -141,24 +136,19 @@ const AuthorizePage = () => {
 							return updatedUsers;
 						});
 					})
-					.on("error", (error, receipt) => {
-						toast({
-							title: "Error al autorizar",
-							description: `Hubo un error al autorizar al usuario ${address}`,
+					.on("error", (error) => {
+						toast("Error", {
+							description: `Error al autorizar al usuario ${address}: ${error.message}`,
 						});
 					});
 			} catch (error) {
 				if (error.code === 4001) {
-					toast({
-						title: "Error",
-						description: "El usuario ha cancelado la peticion de firma.",
+					toast("Denegado", {
+						description: "La transacción ha sido rechazada por el usuario",
 					});
 				} else {
-					toast({
-						title: "Error",
-						description: `Error al autorizar al usuario ${toChecksumAddress(
-							address
-						)}: ${error.message}`,
+					toast("Error", {
+						description: `Error al autorizar al usuario ${address}: ${error.message}`,
 					});
 				}
 			}
