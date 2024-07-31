@@ -112,12 +112,6 @@ export function CallForm({ onClose }) {
 			await cfpFactoryContract.methods
 				.create(callIdHex, data.dateTime.getTime() / 1000)
 				.send({ from: userAccount, gas: 6721975, gasPrice: 20000000000 })
-				.on("receipt", () => {
-					toast("Llamado creado", {
-						description: "El llamado ha sido creado.",
-						id: "call-created",
-					});
-				})
 				.on("error", () => {
 					toast("Error", {
 						description: "Hubo un error al crear el llamado.",

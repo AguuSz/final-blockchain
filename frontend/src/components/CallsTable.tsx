@@ -82,6 +82,9 @@ const CallsTable = ({ className }: { className?: string }) => {
 				})
 			);
 
+			// Filtro para eliminar los llamados sin nombre
+			updatedCalls = updatedCalls.filter((call) => call.name !== "");
+
 			setCalls(updatedCalls);
 		} catch (error) {
 			setCalls([]);
@@ -165,6 +168,62 @@ const CallsTable = ({ className }: { className?: string }) => {
 		}
 	};
 
+	const renderHeader = () => (
+		<div className="flex flex-row items-center justify-between">
+			<h1 className="text-center w-screen my-1 text-xl">
+				{calls.length === 0 ? "No hay llamados" : "Lista de llamadas"}
+			</h1>
+			<div className="flex gap-2">
+				{isUserConnected && (
+					<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+						<DialogTrigger asChild>
+							<Button variant="outline" onClick={() => setIsDialogOpen(true)}>
+								<Plus size={20} />
+							</Button>
+						</DialogTrigger>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>Creacion de un nuevo llamado</DialogTitle>
+								<CallForm onClose={() => setIsDialogOpen(false)} />
+							</DialogHeader>
+						</DialogContent>
+					</Dialog>
+				)}
+				<Button
+					variant="outline"
+					className="group"
+					onClick={() => fetchCalls(creatorAddress)}>
+					<RefreshCcw
+						size={20}
+						className="group-hover:animate-spin transform rotate-180"
+					/>
+				</Button>
+			</div>
+		</div>
+	);
+
+	const renderFilterBar = () => (
+		<div className="flex flex-row mt-3 gap-2 relative">
+			<Input
+				type="text"
+				placeholder="Ingresar dirección del creador"
+				value={creatorAddress}
+				onChange={handleAddressChange}
+				className="pr-15" // Padding a la derecha para el icono
+			/>
+			<Button
+				variant="ghost"
+				size="icon"
+				className="absolute right-20"
+				onClick={handleResetFilter}>
+				<X size={20} />
+			</Button>
+			<Button variant="outline" onClick={handleAddressFilter}>
+				Filtrar
+			</Button>
+		</div>
+	);
+
 	const renderTableContent = () => {
 		if (isLoading) {
 			return (
@@ -176,31 +235,18 @@ const CallsTable = ({ className }: { className?: string }) => {
 		}
 
 		if (calls.length === 0) {
-			return <div className="flex flex-col">{renderHeader()}</div>;
+			return (
+				<div className="flex flex-col">
+					{renderHeader()}
+					{renderFilterBar()}
+				</div>
+			);
 		}
 
 		return (
 			<div className="flex flex-col">
 				{renderHeader()}
-				<div className="flex flex-row mt-3 gap-2 relative">
-					<Input
-						type="text"
-						placeholder="Ingresar dirección del creador"
-						value={creatorAddress}
-						onChange={handleAddressChange}
-						className="pr-15" // Padding a la derecha para el icono
-					/>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="absolute right-20"
-						onClick={handleResetFilter}>
-						<X size={20} />
-					</Button>
-					<Button variant="outline" onClick={handleAddressFilter}>
-						Filtrar
-					</Button>
-				</div>
+				{renderFilterBar()}
 				<ScrollArea className="h-96 mt-2">
 					<Table>
 						<TableHeader>
@@ -248,40 +294,6 @@ const CallsTable = ({ className }: { className?: string }) => {
 			</div>
 		);
 	};
-
-	const renderHeader = () => (
-		<div className="flex flex-row items-center justify-between">
-			<h1 className="text-center w-screen my-1 text-xl">
-				{calls.length === 0 ? "No hay llamados" : "Lista de llamadas"}
-			</h1>
-			{isUserConnected && (
-				<div className="flex gap-2">
-					<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-						<DialogTrigger asChild>
-							<Button variant="outline" onClick={() => setIsDialogOpen(true)}>
-								<Plus size={20} />
-							</Button>
-						</DialogTrigger>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle>Creacion de un nuevo llamado</DialogTitle>
-								<CallForm onClose={() => setIsDialogOpen(false)} />
-							</DialogHeader>
-						</DialogContent>
-					</Dialog>
-					<Button
-						variant="outline"
-						className="group"
-						onClick={() => fetchCalls(creatorAddress)}>
-						<RefreshCcw
-							size={20}
-							className="group-hover:animate-spin transform rotate-180"
-						/>
-					</Button>
-				</div>
-			)}
-		</div>
-	);
 
 	return (
 		<div className={`p-4 w-full rounded-md border ${className}`}>
