@@ -37,6 +37,7 @@ const CallDetails = (props: Props) => {
 			<p>Call ID: {props.call.callId}</p>
 			<p>Call name: {props.call.name}</p>
 			<p>Call Owner: {props.call.owner}</p>
+			<p>Call Owner Address: {props.call.ownerAddress}</p>
 			<p>Call Description: {callDescription || ""}</p>
 		</div>
 	);

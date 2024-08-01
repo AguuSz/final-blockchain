@@ -3,6 +3,7 @@ export type Call = {
 	callId: string;
 	name: string;
 	owner: string;
+	ownerAddress: string;
 	timestamp: string;
 	selected: boolean;
 };

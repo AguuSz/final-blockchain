@@ -77,6 +77,7 @@ const CallsTable = ({ className }: { className?: string }) => {
 					return {
 						...call,
 						owner: resolvedName,
+						ownerAddress: call.owner,
 						name: resolvedCallId,
 					};
 				})

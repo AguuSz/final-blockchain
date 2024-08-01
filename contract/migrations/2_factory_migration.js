@@ -22,15 +22,20 @@ module.exports = async function (deployer, network, accounts) {
 	const usuariosDomainFull = `${usuariosDomain}.${tld}`;
 
 	/* DOMINIO DE PRIMER NIVEL */
+	// Despliega el contrato ENSRegistry.
 	await deployer.deploy(ENSRegistry);
 	let registry = await ENSRegistry.deployed();
 
+	// Despliega el contrato PublicResolver utilizando la dirección del ENSRegistry.
+	// Configura el nodo del dominio de primer nivel (cfp) para que pertenezca a la cuenta desplegadora.
 	await deployer.deploy(PublicResolver, ENSRegistry.address);
 	let resolver = await PublicResolver.deployed();
 
 	await registry.setSubnodeOwner("0x0", keccak256(tld), accounts[0]);
 
 	/* DOMINIOS DE SEGUNDO NIVEL */
+	// Despliega el contrato CallFIFSRegistrar para manejar subdominios bajo llamados.cfp.
+	// Configura el nodo para que CallFIFSRegistrar sea el propietario de llamados.cfp.
 	await deployer.deploy(
 		CallFIFSRegistrar,
 		ENSRegistry.address,
@@ -43,6 +48,8 @@ module.exports = async function (deployer, network, accounts) {
 		callFIFSRegistrar.address
 	);
 
+	// Despliega el contrato UserFIFSRegistrar para manejar subdominios bajo usuarios.cfp.
+	// Configura el nodo para que UserFIFSRegistrar sea el propietario de usuarios.cfp.
 	await deployer.deploy(
 		UserFIFSRegistrar,
 		ENSRegistry.address,
@@ -56,6 +63,9 @@ module.exports = async function (deployer, network, accounts) {
 	);
 
 	/* REVERSE REGISTRAR */
+	// Despliega el contrato ReverseRegistrar utilizando las direcciones del ENSRegistry y PublicResolver.
+	// Configura el nodo del dominio reverse para que pertenezca a la cuenta desplegadora.;
+	// Configura el nodo para que ReverseRegistrar sea el propietario de reverse.addr.
 	await deployer.deploy(
 		ReverseRegistrar,
 		ENSRegistry.address,
@@ -70,6 +80,7 @@ module.exports = async function (deployer, network, accounts) {
 	);
 
 	/* CONTRATO CFPFactory */
+	// Despliega el contrato CFPFactory utilizando las direcciones del ReverseRegistrar y PublicResolver.
 	await deployer.deploy(
 		Factory,
 		reverseRegistrar.address,
